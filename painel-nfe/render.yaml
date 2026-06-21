@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: painel-nfe
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    autoDeploy: true
+    disk:
+      name: painel-nfe-dados
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
