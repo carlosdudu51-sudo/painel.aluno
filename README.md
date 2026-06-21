@@ -40,51 +40,62 @@ Acesse **http://localhost:3000** no navegador.
 Os dados ficam salvos em `data/db.json` (esse arquivo é o seu banco de dados —
 faça backup dele periodicamente).
 
-## Como publicar como site (deploy no Render.com)
+## Como publicar como site, de graça (Render + banco Neon)
 
-O projeto já vem com um arquivo `render.yaml`, que deixa quase tudo
-pré-configurado (disco persistente, comandos de build/start). Passo a passo:
+Para 2 clientes, dá para rodar 100% sem custo. A diferença em relação à versão
+anterior: em vez de guardar os dados num "disco" (que é pago no Render), eles
+ficam num banco de dados na nuvem com plano gratuito permanente (Neon —
+não pede cartão de crédito).
 
-### 1. Subir o projeto para o GitHub (sem precisar saber Git)
+### 1. Criar o banco de dados gratuito (Neon)
 
-1. Crie uma conta gratuita em **https://github.com** (se ainda não tiver).
-2. Clique em **New repository**. Dê um nome, ex: `painel-nfe`. Marque como
-   **Private**. Clique em **Create repository**.
-3. Na página do repositório, clique em **uploading an existing file**.
-4. Arraste para lá **todos os arquivos e pastas de dentro** da pasta
-   `painel-nfe` (não a pasta zipada, o conteúdo dela) — exceto a pasta
-   `node_modules`, se existir.
-5. Clique em **Commit changes**.
+1. Acesse **https://neon.tech** e crie uma conta gratuita (pode entrar com
+   GitHub, é mais rápido).
+2. Crie um novo projeto (qualquer nome, ex: `painel-nfe`).
+3. Na tela do projeto, procure o botão **"Connection string"** (ou
+   "Connect"). Copie o texto que começa com `postgresql://...` — essa é a
+   "chave" de acesso ao seu banco. Guarde em algum lugar seguro por enquanto.
 
-### 2. Criar o site no Render
+### 2. Subir o projeto para o GitHub
 
-1. Crie uma conta gratuita em **https://render.com** (pode entrar direto com
-   sua conta do GitHub, é mais rápido).
-2. No painel do Render, clique em **New** → **Blueprint**.
-3. Selecione o repositório `painel-nfe` que você acabou de criar.
-4. O Render vai detectar o arquivo `render.yaml` automaticamente e já propor:
-   um serviço web + um disco persistente de 1GB. Clique em **Apply** / **Create**.
-5. Aguarde o deploy terminar (alguns minutos). Quando ficar verde ("Live"),
-   seu link vai aparecer no topo, algo como:
-   `https://painel-nfe-xxxx.onrender.com`
+(Pule esta parte se você já fez isso antes.)
 
-### 3. Testar e trocar as senhas
+1. Crie uma conta gratuita em **https://github.com**.
+2. Clique em **New repository**, dê um nome (ex: `painel-nfe`), marque como
+   **Private**, clique em **Create repository**.
+3. Clique em **uploading an existing file** e arraste **o conteúdo de dentro**
+   da pasta `painel-nfe` (não a pasta em si, os arquivos soltos: server.js,
+   package.json, render.yaml, a pasta public, etc.).
+4. Clique em **Commit changes**.
+
+### 3. Criar o site no Render
+
+1. Crie uma conta gratuita em **https://render.com** (pode entrar com GitHub).
+2. Clique em **New** → **Blueprint**, selecione seu repositório `painel-nfe`.
+3. O Render vai detectar o `render.yaml` e pedir o valor de **DATABASE_URL**
+   — cole ali a "connection string" que você copiou do Neon no passo 1.
+4. Clique em **Apply** / **Create**.
+5. Aguarde o deploy (alguns minutos). Quando o status ficar **"Live"**, copie
+   o link do topo da página, algo como `https://painel-nfe-xxxx.onrender.com`.
+
+### 4. Testar e trocar as senhas
 
 1. Abra o link gerado.
-2. Entre com `matriz123` e troque a senha pelo botão **Alterar senha**.
-3. Entre com `cliente123` e troque também.
-4. Envie o link final para o seu cliente.
+2. Entre com `matriz123`, troque a senha pelo botão **Alterar senha**.
+3. Entre com `cliente123`, troque também.
+4. Envie o link para os seus clientes.
 
-### Observações importantes
+### Sobre essa configuração gratuita
 
-- O plano **free** do Render "dorme" o site depois de alguns minutos sem uso —
-  a primeira pessoa a acessar depois disso espera ~30 segundos o site
-  "despertar". Se isso for um problema, dá para mudar para um plano pago
-  básico (a partir de uns US$7/mês) que mantém sempre ativo.
-- O disco de 1GB tem custo pequeno (alguns centavos de dólar por mês) — sem
-  ele, os dados cadastrados se perderiam a cada atualização do site.
-- Se preferir, o mesmo processo funciona em outros serviços (Railway, Fly.io)
-  — me avise se quiser o passo a passo de algum desses.
+- O Neon free tier é permanente, sem cartão de crédito, e tem espaço de sobra
+  para a quantidade de alunos que você vai cadastrar.
+- O Render free "dorme" o site depois de uns minutos sem uso — a primeira
+  pessoa a acessar depois disso espera ~30 segundos o site "acordar". Os
+  dados continuam seguros nesse meio tempo (eles estão no Neon, não no
+  Render).
+- Quando tiver mais clientes e quiser que o site nunca durma, é só trocar o
+  plano do Render de `free` para `starter` no arquivo `render.yaml` (custo
+  aproximado de US$7/mês) — o banco de dados (Neon) não muda.
 
 Se preferir, posso te guiar em tempo real enquanto você faz esses passos —
 é só ir me avisando em qual etapa você está.

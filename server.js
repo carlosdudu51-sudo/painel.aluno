@@ -14,6 +14,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Envolve rotas async em try/catch automaticamente
+const r = (fn) => (req, res) => fn(req, res).catch((err) => {
+  console.error(err);
+  res.status(500).json({ erro: 'Erro interno no servidor. Tente novamente em instantes.' });
+});
+
 // ---------- Auth helpers ----------
 
 function gerarToken(role) {
@@ -42,7 +48,7 @@ function somenteMatriz(req, res, next) {
 
 // ---------- Auth routes ----------
 
-app.post('/api/auth/login', (req, res) => {
+app.post('/api/auth/login', r(async (req, res) => {
   const { role, senha } = req.body || {};
   if (!['matriz', 'cliente'].includes(role)) {
     return res.status(400).json({ erro: 'Tipo de acesso inválido.' });
@@ -50,33 +56,33 @@ app.post('/api/auth/login', (req, res) => {
   if (!senha) {
     return res.status(400).json({ erro: 'Informe a senha.' });
   }
-  const data = db.read();
+  const data = await db.read();
   const hash = data.senhas[role];
   if (!hash || !bcrypt.compareSync(senha, hash)) {
     return res.status(401).json({ erro: 'Senha incorreta.' });
   }
   res.json({ token: gerarToken(role), role });
-});
+}));
 
-app.post('/api/auth/trocar-senha', autenticar, (req, res) => {
+app.post('/api/auth/trocar-senha', autenticar, r(async (req, res) => {
   const { senhaAtual, novaSenha } = req.body || {};
   if (!novaSenha || String(novaSenha).length < 6) {
     return res.status(400).json({ erro: 'A nova senha deve ter ao menos 6 caracteres.' });
   }
-  const data = db.read();
+  const data = await db.read();
   const hashAtual = data.senhas[req.role];
   if (!senhaAtual || !bcrypt.compareSync(senhaAtual, hashAtual)) {
     return res.status(401).json({ erro: 'Senha atual incorreta.' });
   }
   data.senhas[req.role] = bcrypt.hashSync(String(novaSenha), 10);
-  db.write(data);
+  await db.write(data);
   res.json({ ok: true });
-});
+}));
 
 // ---------- Alunos routes ----------
 
-app.get('/api/alunos', autenticar, (req, res) => {
-  const data = db.read();
+app.get('/api/alunos', autenticar, r(async (req, res) => {
+  const data = await db.read();
   let lista = data.alunos;
 
   const { status, plano, formaPagamento, emiteNFe, busca } = req.query;
@@ -95,13 +101,13 @@ app.get('/api/alunos', autenticar, (req, res) => {
   }
 
   res.json(lista.sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto)));
-});
+}));
 
-app.post('/api/alunos', autenticar, (req, res) => {
+app.post('/api/alunos', autenticar, r(async (req, res) => {
   const { ok, erros, dados } = validarAluno(req.body || {});
   if (!ok) return res.status(400).json({ erro: 'Dados inválidos.', campos: erros });
 
-  const data = db.read();
+  const data = await db.read();
   const cpfDuplicado = data.alunos.some(a => limparCpf(a.cpf) === limparCpf(dados.cpf));
   if (cpfDuplicado) {
     return res.status(409).json({ erro: 'Já existe um aluno cadastrado com esse CPF.', campos: { cpf: 'CPF já cadastrado.' } });
@@ -115,13 +121,13 @@ app.post('/api/alunos', autenticar, (req, res) => {
   };
   data.alunos.push(novo);
   data.proximoId += 1;
-  db.write(data);
+  await db.write(data);
   res.status(201).json(novo);
-});
+}));
 
-app.put('/api/alunos/:id', autenticar, (req, res) => {
+app.put('/api/alunos/:id', autenticar, r(async (req, res) => {
   const id = Number(req.params.id);
-  const data = db.read();
+  const data = await db.read();
   const idx = data.alunos.findIndex(a => a.id === id);
   if (idx === -1) return res.status(404).json({ erro: 'Aluno não encontrado.' });
 
@@ -136,24 +142,24 @@ app.put('/api/alunos/:id', autenticar, (req, res) => {
   }
 
   data.alunos[idx] = { ...data.alunos[idx], ...dados, atualizadoEm: new Date().toISOString() };
-  db.write(data);
+  await db.write(data);
   res.json(data.alunos[idx]);
-});
+}));
 
-app.delete('/api/alunos/:id', autenticar, somenteMatriz, (req, res) => {
+app.delete('/api/alunos/:id', autenticar, somenteMatriz, r(async (req, res) => {
   const id = Number(req.params.id);
-  const data = db.read();
+  const data = await db.read();
   const existia = data.alunos.some(a => a.id === id);
   if (!existia) return res.status(404).json({ erro: 'Aluno não encontrado.' });
   data.alunos = data.alunos.filter(a => a.id !== id);
-  db.write(data);
+  await db.write(data);
   res.json({ ok: true });
-});
+}));
 
 // ---------- Dashboard ----------
 
-app.get('/api/dashboard', autenticar, (req, res) => {
-  const data = db.read();
+app.get('/api/dashboard', autenticar, r(async (req, res) => {
+  const data = await db.read();
   const alunos = data.alunos;
   const ativos = alunos.filter(a => a.status === 'ATIVO');
   const queEmitemNFe = ativos.filter(a => a.emiteNFe);
@@ -182,8 +188,8 @@ app.get('/api/dashboard', autenticar, (req, res) => {
     qtdPorForma,
     qtdPorPlano
   });
-});
+}));
 
 app.listen(PORT, () => {
-  console.log(`Painel NFe rodando em http://localhost:${PORT}`);
+  console.log(`Painel NFe rodando em http://localhost:${PORT} (armazenamento: ${db.USANDO_POSTGRES ? 'Postgres' : 'arquivo local'})`);
 });
