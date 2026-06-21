@@ -1,0 +1,16 @@
+{
+  "name": "painel-nfe",
+  "version": "1.0.0",
+  "description": "Painel de controle de alunos e emissao de NFe",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
+  }
+}
